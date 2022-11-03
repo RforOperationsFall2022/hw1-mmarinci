@@ -8,9 +8,11 @@
 #
 
 library(shiny)
+library(rsconnect)
+rsconnect::deployApp('C:/Users/mmari/OneDrive/Documents/GitHub/RforOperations/hw1-mmarinci')
 
 # Define UI for application that draws a histogram
-ui <- fluidPage(
+ui <- fluidPage(theme = shinytheme("superhero"),
 
     # Application title
     titlePanel("Old Faithful Geyser Data"),
