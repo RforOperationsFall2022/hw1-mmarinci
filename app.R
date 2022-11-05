@@ -9,7 +9,11 @@
 
 library(shiny)
 library(rsconnect)
-rsconnect::deployApp('C:/Users/mmari/OneDrive/Documents/GitHub/RforOperations/hw1-mmarinci')
+
+ob2020 <- read.csv("2020-operating.csv")
+ob2021 <- read.csv("2021-amended-operating.csv")
+ob2022 <- read.csv("2022-amended-operating")
+budget <- rbind(ob2020, ob2021, ob2022)
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(theme = shinytheme("superhero"),
