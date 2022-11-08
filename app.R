@@ -27,16 +27,25 @@ data <- budget %>%
 ui <- fluidPage(
 
     # Application title
-    titlePanel("Operating Budget for PIttsburgh 2020-2022"),
+    titlePanel("Operating Budget for Pittsburgh 2020-2022"),
 
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
         sidebarPanel(
-           # sliderInput("bins",
-            #            "Number of bins:",
-             #           min = 1,
-              #          max = 50,
-               #         value = 30)
+          # Select a year of data to show ----------------------------------
+          selectInput(inputId = "year", 
+                      label = "Choose a budget year:",
+                      choices = c("2020" = 2020, 
+                                  "2021" = 2021, 
+                                  "2022" = 2022), 
+                      selected = "2020"),
+        
+        # Select a department to show ----------------------------------
+        checkboxGroupInput(inputId = "selected_dept",
+                           label = "Select department(s):",
+                           choices = unique(data$Department),
+                           selected = c("ETHICS BOARD","OFFICE OF EQUITY","PS - FIRE BUREAU","PS - POLICE BUREAU"))
+        
         ),
 
         # Show a plot of the generated distribution
@@ -48,15 +57,19 @@ ui <- fluidPage(
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
+  
+  year_subset <- reactive({
+    req(input$year, input$selected_dept)
+    filter(data, Year == input$year & Department %in% input$selected_dept)
+  })
 
     output$deptBarplot <- renderPlot({
-        # generate bins based on input$bins from ui.R
-        x <- budget[, c('Department', 'Amount')]
-        x <- aggregate(x$Amount, by=list(Category = x$Department), FUN = sum)
-        #bins <- seq(min(x), max(x), length.out = input$bins + 1)
-
-        # draw the histogram with the specified number of bins
-        barplot(x, col = 'darkgray', border = 'white')
+        # generate barplot
+      ggplot(year_subset(), aes(Department, Total)) +
+        geom_col() +
+        theme(axis.text.x = element_text(angle = 90, size = 10)) +
+        scale_y_continuous(labels = comma) + 
+        ylab("Total Budget ($)")
     })
 }
 
