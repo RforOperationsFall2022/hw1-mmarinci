@@ -23,7 +23,15 @@ data <- budget %>%
   select(Year, Department, Amount) %>%
   group_by(Year, Department) %>%
   summarize(Total = sum(Amount)) %>%
-  arrange(Total)
+  arrange(Total) %>%
+  group_by(Year) %>%
+  mutate(Percentage = round(Total / sum(Total) * 100, 1))
+
+data_wide <- data %>%
+  pivot_wider(names_from = Year, values_from = c(Total, Percentage)) %>%
+  arrange(Percentage_2020)
+
+data_wide$Department <- factor(data_wide$Department, levels = as.character(data_wide$Department))
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -35,13 +43,13 @@ ui <- fluidPage(
     sidebarLayout(
         sidebarPanel(
           # Select a year of data to show ----------------------------------
-          checkboxGroupInput(inputId = "year", 
-                      label = "Choose a budget year(s):",
+          selectInput(inputId = "year", 
+                      label = "Choose a budget year:",
                       choices = c(2020, 2021, 2022), 
                       selected = "2020"),
         
-        # Select a department to show ----------------------------------
-        checkboxGroupInput(inputId = "selected_dept",
+          # Select a department to show ----------------------------------
+          checkboxGroupInput(inputId = "selected_dept",
                            label = "Select department(s):",
                            choices = unique(data$Department),
                            selected = c("ETHICS BOARD","OFFICE OF EQUITY","PS - FIRE BUREAU","PS - POLICE BUREAU"))
@@ -51,7 +59,8 @@ ui <- fluidPage(
         # Show a plot of the generated distribution
         mainPanel(
            plotOutput("deptBarplot"),
-           plotOutput("piechart")
+           plotOutput("piechart"),
+           plotOutput("dumbbell")
         )
     )
 )
@@ -77,8 +86,32 @@ server <- function(input, output) {
     output$piechart <- renderPlot({  
       ggplot(year_subset(), aes(x = '', y = Total, fill = Department)) +
         geom_bar(width = 1, stat = "identity") +
-        coord_polar("y", start = 0)
+        coord_polar("y", start = 0) +
+        scale_y_continuous(labels = scales::comma)
         })
+    
+    # Generate a dumbbel chart----------------------------------------------------
+    output$dumbbell <- renderPlot({  
+      ggplot(data_wide, aes(x=Percentage_2020, xend=Percentage_2022, y=Department, group=Department)) + 
+        geom_dumbbell(color="#a3c4dc", 
+                      size=0.75, 
+                      point.colour.l="#0e668b") + 
+        labs(x=NULL, 
+             y=NULL, 
+             title="Dumbbell Chart", 
+             subtitle="Pct Change: 2020 vs 2022", 
+             caption="Source: https://github.com/hrbrmstr/ggalt") +
+        theme(plot.title = element_text(hjust=0.5, face="bold"),
+              axis.text.x = element_text(angle = 90), 
+              plot.background=element_rect(fill="#f7f7f7"),
+              panel.background=element_rect(fill="#f7f7f7"),
+              panel.grid.minor=element_blank(),
+              panel.grid.major.y=element_blank(),
+              panel.grid.major.x=element_line(),
+              axis.ticks=element_blank(),
+              legend.position="top",
+              panel.border=element_blank())
+            })
 }
 
 # Run the application 
