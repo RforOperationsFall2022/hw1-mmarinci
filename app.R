@@ -10,6 +10,8 @@
 library(shiny)
 library(rsconnect)
 library(tools)
+library(tidyverse)
+library(ggplot2)
 
 ob2020 <- read.csv(file = "2020-operating.csv")
 ob2021 <- read.csv(file = "2021-amended-operating.csv")
@@ -33,11 +35,9 @@ ui <- fluidPage(
     sidebarLayout(
         sidebarPanel(
           # Select a year of data to show ----------------------------------
-          selectInput(inputId = "year", 
-                      label = "Choose a budget year:",
-                      choices = c("2020" = 2020, 
-                                  "2021" = 2021, 
-                                  "2022" = 2022), 
+          checkboxGroupInput(inputId = "year", 
+                      label = "Choose a budget year(s):",
+                      choices = c(2020, 2021, 2022), 
                       selected = "2020"),
         
         # Select a department to show ----------------------------------
@@ -50,7 +50,8 @@ ui <- fluidPage(
 
         # Show a plot of the generated distribution
         mainPanel(
-           plotOutput("deptBarplot")
+           plotOutput("deptBarplot"),
+           plotOutput("piechart")
         )
     )
 )
@@ -60,17 +61,24 @@ server <- function(input, output) {
   
   year_subset <- reactive({
     req(input$year, input$selected_dept)
-    filter(data, Year == input$year & Department %in% input$selected_dept)
+    filter(data, Year %in% input$year & Department %in% input$selected_dept)
   })
 
-    output$deptBarplot <- renderPlot({
-        # generate barplot
+  # generate barplot--------------------------------------------------------  
+  output$deptBarplot <- renderPlot({
       ggplot(year_subset(), aes(Department, Total)) +
         geom_col() +
         theme(axis.text.x = element_text(angle = 90, size = 10)) +
-        scale_y_continuous(labels = comma) + 
+        scale_y_continuous(labels = scales::comma) + 
         ylab("Total Budget ($)")
-    })
+        })
+    
+    # Generate a pie chart----------------------------------------------------
+    output$piechart <- renderPlot({  
+      ggplot(year_subset(), aes(x = '', y = Total, fill = Department)) +
+        geom_bar(width = 1, stat = "identity") +
+        coord_polar("y", start = 0)
+        })
 }
 
 # Run the application 
