@@ -14,6 +14,7 @@ library(tidyverse)
 library(ggplot2)
 library(ggalt)
 library(DT)
+library(wesanderson)
 
 ob2020 <- read.csv(file = "2020-operating.csv")
 ob2021 <- read.csv(file = "2021-amended-operating.csv")
@@ -48,7 +49,7 @@ ui <- fluidPage(
           selectInput(inputId = "year", 
                       label = "Choose a budget year:",
                       choices = c(2020, 2021, 2022), 
-                      selected = "2020"),
+                      selected = "2022"),
         
           # Select a department to show ----------------------------------
           checkboxGroupInput(inputId = "selected_dept",
@@ -61,8 +62,17 @@ ui <- fluidPage(
         # Show a plot of the generated distribution
         mainPanel(
            plotOutput("deptBarplot"),
+           br(),
+           br(),
+           br(),
            plotOutput("dumbbell"),
+           br(),
+           br(),
+           br(),
            plotOutput("piechart"),
+           br(),
+           br(),
+           br(),
            DT::dataTableOutput(outputId = "budgetTable")
         )
     )
@@ -75,11 +85,16 @@ server <- function(input, output) {
     req(input$year, input$selected_dept)
     filter(data, Year %in% input$year & Department %in% input$selected_dept)
   })
+  
+  dumbbell_subset <- reactive({
+    req(input$selected_dept)
+    filter(data_wide, Department %in% input$selected_dept)
+  })
 
   # generate barplot--------------------------------------------------------  
   output$deptBarplot <- renderPlot({
       ggplot(year_subset(), aes(Department, Total)) +
-        geom_col() +
+        geom_col(fill="lightblue") +
         labs(x=NULL,
              y=NULL,
              title = "Budget by Department and Year") +
@@ -98,14 +113,15 @@ server <- function(input, output) {
 
     # Generate a dumbbel chart----------------------------------------------------
     output$dumbbell <- renderPlot({  
-      ggplot(data_wide, aes(x=Percentage_2020, xend=Percentage_2022, y=Department, group=Department)) + 
-        geom_dumbbell(color="#a3c4dc", 
-                      size=0.75) + 
+      ggplot(dumbbell_subset(), aes(x=Percentage_2020, xend=Percentage_2022, y=Department, group=Department)) + 
+        geom_dumbbell(color="lightblue", 
+                      size=2,
+                      colour_xend="blue",
+                      show.legend = TRUE) + 
         labs(x=NULL, 
              y=NULL, 
              title="Departments by Percent of Total Budget for 2020 vs. 2020", 
-             subtitle="Percentage Point Change: 2020 vs 2022", 
-             caption="Source: https://github.com/hrbrmstr/ggalt") +
+             subtitle="Percentage Point Change: 2020 vs 2022") +
         theme(plot.title = element_text(hjust=0.5, face="bold"),
               plot.background=element_rect(fill="#FFFFFF"),
               panel.background=element_rect(fill="#FFFFFF"),
@@ -113,7 +129,6 @@ server <- function(input, output) {
               panel.grid.major.y=element_blank(),
               panel.grid.major.x=element_line(),
               axis.ticks=element_blank(),
-              legend.position="top",
               panel.border=element_blank()
           )
           })
@@ -127,6 +142,7 @@ server <- function(input, output) {
              y=NULL,
              title = "Pie Chart of Budget by Department and Year") +
         scale_y_continuous(labels = scales::comma) + 
+        scale_fill_manual(values = wes_palette("Darjeeling2", 30, type = "continuous")) +
         theme(plot.title = element_text(hjust=0.5, face="bold"),
               plot.background=element_rect(fill="#FFFFFF"),
               panel.background=element_rect(fill="#FFFFFF"),
