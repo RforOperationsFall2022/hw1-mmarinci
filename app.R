@@ -12,6 +12,8 @@ library(rsconnect)
 library(tools)
 library(tidyverse)
 library(ggplot2)
+library(ggalt)
+library(DT)
 
 ob2020 <- read.csv(file = "2020-operating.csv")
 ob2021 <- read.csv(file = "2021-amended-operating.csv")
@@ -59,8 +61,9 @@ ui <- fluidPage(
         # Show a plot of the generated distribution
         mainPanel(
            plotOutput("deptBarplot"),
-           plotOutput("piechart"),
-           plotOutput("dumbbell")
+           <br>
+           plotOutput("dumbbell"),
+           plotOutput("piechart")
         )
     )
 )
@@ -77,19 +80,22 @@ server <- function(input, output) {
   output$deptBarplot <- renderPlot({
       ggplot(year_subset(), aes(Department, Total)) +
         geom_col() +
+        labs(x=NULL,
+             y=NULL,
+             title = "Budget by Department and Year") +
         theme(axis.text.x = element_text(angle = 90, size = 10)) +
         scale_y_continuous(labels = scales::comma) + 
-        ylab("Total Budget ($)")
+        ylab("Total Budget ($)") +
+        theme(plot.title = element_text(hjust=0.5, face="bold"),
+            plot.background=element_rect(fill="#FFFFFF"),
+            panel.background=element_rect(fill="#FFFFFF"),
+            panel.grid.minor=element_blank(),
+            panel.grid.major.y=element_blank(),
+            panel.grid.major.x=element_line(),
+            panel.border=element_blank()
+        )
         })
-    
-    # Generate a pie chart----------------------------------------------------
-    output$piechart <- renderPlot({  
-      ggplot(year_subset(), aes(x = '', y = Total, fill = Department)) +
-        geom_bar(width = 1, stat = "identity") +
-        coord_polar("y", start = 0) +
-        scale_y_continuous(labels = scales::comma)
-        })
-    
+
     # Generate a dumbbel chart----------------------------------------------------
     output$dumbbell <- renderPlot({  
       ggplot(data_wide, aes(x=Percentage_2020, xend=Percentage_2022, y=Department, group=Department)) + 
@@ -98,20 +104,40 @@ server <- function(input, output) {
                       point.colour.l="#0e668b") + 
         labs(x=NULL, 
              y=NULL, 
-             title="Dumbbell Chart", 
-             subtitle="Pct Change: 2020 vs 2022", 
+             title="Departments by Percent of Total Budget for 2020 vs. 2020", 
+             subtitle="Percentage Point Change: 2020 vs 2022", 
              caption="Source: https://github.com/hrbrmstr/ggalt") +
         theme(plot.title = element_text(hjust=0.5, face="bold"),
-              axis.text.x = element_text(angle = 90), 
-              plot.background=element_rect(fill="#f7f7f7"),
-              panel.background=element_rect(fill="#f7f7f7"),
+              plot.background=element_rect(fill="#FFFFFF"),
+              panel.background=element_rect(fill="#FFFFFF"),
               panel.grid.minor=element_blank(),
               panel.grid.major.y=element_blank(),
               panel.grid.major.x=element_line(),
               axis.ticks=element_blank(),
               legend.position="top",
-              panel.border=element_blank())
-            })
+              panel.border=element_blank()
+          )
+          })
+    
+    # Generate a pie chart----------------------------------------------------
+    output$piechart <- renderPlot({  
+      ggplot(year_subset(), aes(x = '', y = Total, fill = Department)) +
+        geom_bar(width = 1, stat = "identity") +
+        coord_polar("y", start = 0) +
+        labs(x=NULL,
+             y=NULL,
+             title = "Pie Chart of Budget by Department and Year") +
+        scale_y_continuous(labels = scales::comma) + 
+        theme(plot.title = element_text(hjust=0.5, face="bold"),
+              plot.background=element_rect(fill="#FFFFFF"),
+              panel.background=element_rect(fill="#FFFFFF"),
+              panel.grid.minor=element_blank(),
+              panel.grid.major.y=element_blank(),
+              panel.grid.major.x=element_line(),
+              panel.border=element_blank()
+        )
+    })
+    
 }
 
 # Run the application 
