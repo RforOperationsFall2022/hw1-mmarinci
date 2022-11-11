@@ -61,9 +61,9 @@ ui <- fluidPage(
         # Show a plot of the generated distribution
         mainPanel(
            plotOutput("deptBarplot"),
-           <br>
            plotOutput("dumbbell"),
-           plotOutput("piechart")
+           plotOutput("piechart"),
+           DT::dataTableOutput(outputId = "budgetTable")
         )
     )
 )
@@ -100,8 +100,7 @@ server <- function(input, output) {
     output$dumbbell <- renderPlot({  
       ggplot(data_wide, aes(x=Percentage_2020, xend=Percentage_2022, y=Department, group=Department)) + 
         geom_dumbbell(color="#a3c4dc", 
-                      size=0.75, 
-                      point.colour.l="#0e668b") + 
+                      size=0.75) + 
         labs(x=NULL, 
              y=NULL, 
              title="Departments by Percent of Total Budget for 2020 vs. 2020", 
@@ -137,6 +136,13 @@ server <- function(input, output) {
               panel.border=element_blank()
         )
     })
+    
+    # Print data table----------------------------------------------------------
+    output$budgetTable <- DT::renderDataTable(
+        DT::datatable(data = year_subset(), 
+                      options = list(pageLength = 10), 
+                      rownames = FALSE)
+    )
     
 }
 
