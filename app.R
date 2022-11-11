@@ -56,6 +56,9 @@ ui <- fluidPage(
                            label = "Select department(s):",
                            choices = unique(data$Department),
                            selected = c("ETHICS BOARD","OFFICE OF EQUITY","PS - FIRE BUREAU","PS - POLICE BUREAU"))
+          
+          # Create a download button---------------------------------------
+          
         
         ),
 
@@ -73,7 +76,8 @@ ui <- fluidPage(
            br(),
            br(),
            br(),
-           DT::dataTableOutput(outputId = "budgetTable")
+           DT::dataTableOutput(outputId = "budgetTable"),
+           downloadButton(outputId = "dlButton", label = "Download")
         )
     )
 )
@@ -158,6 +162,14 @@ server <- function(input, output) {
         DT::datatable(data = year_subset(), 
                       options = list(pageLength = 10), 
                       rownames = FALSE)
+    )
+  
+    # Download button functionality
+    output$dlButton <- downloadHandler(
+      filename = "Budget_Data.csv",
+      content = function(file) {
+        write.csv(year_subset(), file)
+      }
     )
     
 }
