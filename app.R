@@ -16,7 +16,7 @@ library(ggalt)
 library(DT)
 library(wesanderson)
 
-
+# Read in data files adn concatenate budgets for years 2012-2022
 ob2022 <- read.csv(file = "2022-amended-operating.csv")
 ob2021 <- read.csv(file = "2021-amended-operating.csv")
 ob2020 <- read.csv(file = "2020-operating.csv")
@@ -31,6 +31,7 @@ ob2012 <- read.csv(file = "2012-operating.csv")
 
 budget <- rbind(ob2022, ob2021, ob2020, ob2019, ob2018, ob2017, ob2016, ob2015)
 
+# Filter and clean data
 data1 <- budget %>% 
   filter(Type == "Expenditure") %>%
   select(Year, Department, Amount)
@@ -64,12 +65,11 @@ data <- data1 %>%
   group_by(Year) %>%
   mutate(Percentage = round(Total / sum(Total) * 100, 1))
 
-
+# Create a wide version of the data
 data_wide <- data %>%
   pivot_wider(names_from = Year, values_from = c(Total, Percentage)) %>%
   arrange(Percentage_2022)
 
-data_wide$Department <- factor(data_wide$Department, levels = as.character(data_wide$Department))
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -97,7 +97,7 @@ ui <- fluidPage(
         
         ),
 
-        # Show a plot of the generated distribution
+        # Show plots, data table and download button
         mainPanel(
            plotOutput("deptBarplot"),
            br(),
@@ -132,7 +132,7 @@ server <- function(input, output) {
     filter(data, Department %in% input$selected_dept)
   })
 
-  # generate barplot--------------------------------------------------------  
+  # Generate a barplot--------------------------------------------------------  
   output$deptBarplot <- renderPlot({
       ggplot(year_subset(), aes(Department, Total)) +
         geom_col(fill="lightblue") +
@@ -180,14 +180,8 @@ server <- function(input, output) {
              title = "Total Budget for Selected Departments and Year") +
         scale_y_continuous(labels = scales::comma) + 
         scale_fill_manual(values = wes_palette("Darjeeling2", 30, type = "continuous")) +
-        theme(plot.title = element_text(hjust=0.5, face="bold", size = 20),
-              plot.background=element_rect(fill="#FFFFFF"),
-              panel.background=element_rect(fill="#FFFFFF"),
-              panel.grid.minor=element_blank(),
-              panel.grid.major.y=element_blank(),
-              panel.grid.major.x=element_line(),
-              panel.border=element_blank()
-        )
+        theme_void() +
+        theme(plot.title = element_text(hjust=0.5, face="bold", size = 20))
     })
     
     # Print data table----------------------------------------------------------
@@ -197,7 +191,7 @@ server <- function(input, output) {
                       rownames = FALSE)
     )
   
-    # Download button functionality
+    # Add download button functionality
     output$dlButton <- downloadHandler(
       filename = "Budget_Data.csv",
       content = function(file) {
